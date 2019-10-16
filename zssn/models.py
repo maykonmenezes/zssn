@@ -36,10 +36,10 @@ class Inventory(models.Model):
 		return self.survivor.name + " Inventory"
 
 
-class LastLocation(models.Model):
+class Location(models.Model):
 	latitude = models.FloatField(default=0)
 	longitude = models.FloatField(default=0)
-	survivor = models.OneToOneField(Survivor, related_name="last_location", on_delete=models.CASCADE)
+	survivor = models.OneToOneField(Survivor, related_name="location", on_delete=models.CASCADE)
 	
 
 class Flag(models.Model):
