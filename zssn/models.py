@@ -35,6 +35,9 @@ class Inventory(models.Model):
 	def __str__(self):
 		return self.survivor.name + " Inventory"
 
+    def get_points(self):
+        return water*4 + food*3 + med*3 + ammo
+
 
 class Location(models.Model):
 	latitude = models.FloatField(default=0)
