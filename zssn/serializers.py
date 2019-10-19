@@ -20,33 +20,35 @@ class LocationSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {'survivor': {'read_only' : True}}
 
 class LastLocationSerializer(serializers.Serializer):
-    survivor_id = serializers.IntegerField()
+
     latitude = serializers.DecimalField(decimal_places=6, max_digits=30)
     longitude = serializers.DecimalField(decimal_places=6, max_digits=30)
 
 
-class FlagSerializer(serializers.HyperlinkedModelSerializer):
-    
-    class Meta:
-        model = Flag
-        fields = ['url', 'id', 'flagged', 'flagging']
+class FlagSerializer(serializers.Serializer):
+
+    flagged_id = serializers.IntegerField()
 
 class TradeSerializer(serializers.Serializer):
-    sender_id = serializers.IntegerField()
-    recipient_id = serializers.IntegerField()
-    sender_water = serializers.IntegerField()
-    sender_food = serializers.IntegerField()
-    sender_medication = serializers.IntegerField()
-    sender_ammunition = serializers.IntegerField()
-    recipient_water = serializers.IntegerField()
-    recipient_food = serializers.IntegerField()
-    recipient_medication = serializers.IntegerField()
-    recipient_ammunition = serializers.IntegerField()
+
+    buyer_id = serializers.IntegerField()
+
+    pick_water = serializers.IntegerField()
+    pick_food = serializers.IntegerField()
+    pick_med = serializers.IntegerField()
+    pick_ammo = serializers.IntegerField()
+
+    offer_water = serializers.IntegerField()
+    offer_food = serializers.IntegerField()
+    offer_med = serializers.IntegerField()
+    offer_ammo = serializers.IntegerField()
 
 
 class SurvivorSerializer(serializers.HyperlinkedModelSerializer):
+
     inventory = InventorySerializer(many=False)
     location = LocationSerializer(many=False)
+
     class Meta:
         model = Survivor
         fields = ['url', 'id', 'name', 'age','gender',

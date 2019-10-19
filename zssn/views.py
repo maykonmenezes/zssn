@@ -19,30 +19,89 @@ class SurvivorViewSet(viewsets.ModelViewSet):
     serializer_class = SurvivorSerializer
     
     def update(self, request):
-    	return Response({'status':'Survivor changes not allowed!'}, 
-    		status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({'status':'Survivor changes not allowed!'}, 
+            status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-class LastLocationViewSet(viewsets.ModelViewSet):
+    @action(methods=['post'], detail=True, serializer_class=LastLocationSerializer)
+    def last_location(self, request, pk):
+        ls = LastLocationSerializer(data=request.data)
+        survivor = get_object_or_404(Survivor, id=pk)
+        if ls.is_valid():
+            survivor.location.latitude = ls.data['latitude']
+            survivor.location.longitude = ls.data['longitude']
+            survivor.save()
+            return Response({'status':'Survivor last location updated successfully'}, 
+                status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=True, serializer_class=FlagSerializer)
+    def flag(self, request,pk):
+        fs = FlagSerializer(data=request.data)
+        flagged = get_object_or_404(Survivor, id=fs.initial_data['flagged_id'])
+        flagging = get_object_or_404(Survivor, id=pk)
+        if fs.is_valid():
+            if not flagged == flagging:
+                flag = Flag()
+                flag.flagged = flagged
+                flag.flagging = flagging
+                flag.save()
+                return Response({'status':'Survivor flagged as infected successfully!'}, 
+                    status=status.HTTP_200_OK)
+            else:
+                return Response({'status':'Survivors cannot flag themselves as infected'}, 
+                    status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
     
-    serializer_class = LastLocationSerializer
+    @action(methods=['post'], detail=True, serializer_class=TradeSerializer)
+    def trade(self, request, pk):
+        ts = TradeSerializer(data=request.data)
+        dealer = get_object_or_404(Survivor,id=pk)
+        buyer = get_object_or_404(Survivor,id=ts.initial_data['buyer_id'])
+        if ts.is_valid():
+            if not dealer.infected or not buyer.infected:
+                points_dealer = (int(ts.data['pick_water']) * 4 + int(ts.data['pick_food']) * 3 +
+                                 int(ts.data['pick_med']) * 2 + int(ts.data['pick_ammo']) * 1)
+                points_buyer = (int(ts.data['offer_water']) * 4 + int(ts.data['offer_food']) * 3 +
+                                    int(ts.data['offer_med']) * 2 + int(ts.data['offer_ammo']) * 1)     
+                if dealer.inventory.get_points() >= points_dealer or buyer.inventory.get_points() >= points_buyer:
+                    if points_dealer == points_buyer:
+                        dealer.inventory.water -= ts.data['pick_water']
+                        dealer.inventory.food -= ts.data['pick_food']
+                        dealer.inventory.med -= ts.data['pick_med']
+                        dealer.inventory.ammo -= ts.data['pick_ammo']
 
-    def create(self, request):
-    	ls = LastLocationSerializer(data=request.data)
-    	survivor = get_object_or_404(Survivor, id=ls.initial_data['survivor_id'])
-    	if ls.is_valid():
-    		survivor.location.latitude = ls.data['latitude']
-    		survivor.location.longitude = ls.data['longitude']
-    		survivor.save()
-    		return Response({'status':'Survivor last location updated successfully'}, 
-    			status=status.HTTP_200_OK)
-    	else:
-    		return Response(status=status.HTTP_400_BAD_REQUEST)
+                        buyer.inventory.water -= ts.data['offer_water']
+                        buyer.inventory.food -= ts.data['offer_food']
+                        buyer.inventory.med -= ts.data['offer_med']
+                        buyer.inventory.ammo -= ts.data['offer_ammo']
 
-    def get_queryset(self):
-        return None
+                        buyer.inventory.water += ts.data['pick_water']
+                        buyer.inventory.food += ts.data['pick_food']
+                        buyer.inventory.med += ts.data['pick_med']
+                        buyer.inventory.ammo += ts.data['pick_ammo']
 
-    def list(self, request):
-        return Response(status=status.HTTP_404_NOT_FOUND)
+                        dealer.inventory.water += ts.data['offer_water']
+                        dealer.inventory.food += ts.data['offer_food']
+                        dealer.inventory.med += ts.data['offer_med']
+                        dealer.inventory.ammo += ts.data['offer_ammo']
+
+                        dealer.inventory.save()
+                        buyer.inventory.save()
+                        return Response({'status':'Items traded successfully!'}, 
+                            status=status.HTTP_200_OK)
+                    else:
+                        return Response({'status':'Sorry couldnt make it, one of the traders doesnt have enough points to trade!'}, 
+                            status=status.HTTP_406_NOT_ACCEPTABLE)
+                else:
+                    return Response({'status':'One of the traders doesnt have enough points to trade!'}, 
+                        status=status.HTTP_406_NOT_ACCEPTABLE)
+            else:
+                return Response({'status':'Trade failed due to one of the traders is infected!'}, 
+                    status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
   
 
 class InventoryViewSet(viewsets.ModelViewSet):
@@ -52,94 +111,21 @@ class InventoryViewSet(viewsets.ModelViewSet):
    permission_classes = [SurvivorReadOnly]
 
 
-class FlagViewSet(viewsets.ModelViewSet):
-    
-    queryset = Flag.objects.all()
-    serializer_class = FlagSerializer
-
-    def create(self, request):
-    	fs = FlagSerializer(data=request.data)
-    	flagged = get_object_or_404(Survivor, id=fs.initial_data['flagged_id'])
-    	flagging = get_object_or_404(Survivor, id=fs.initial_data['flagging_id'])
-    	if fs.is_valid():
-    		if not flagged == flagging:
-	    		flag = Flag()
-	    		flag.flagged = flagged
-	    		flag.flagging = flagging
-	    		flag.save()
-	    		return Response({'status':'Survivor flagged as infected successfully!'}, 
-	    			status=status.HTTP_200_OK)
-	    	else:
-	    		return Response({'status':'Survivors cannot flag themselves as infected'}, 
-	    			status=status.HTTP_400_BAD_REQUEST)
-    	else:
-    		return Response(status=status.HTTP_400_BAD_REQUEST)
-
 class ReportViewSet(viewsets.ViewSet):
-	
-	def list(self, request):
-		reports = []
-		reports.append(Report.infected())
-		reports.append(Report.non_infected())
-		reports.append(Report.resource())
-		reports.append(Report.lost_points())
 
-		return Response(reports)
+    @action(methods=['get'], detail=False)
+    def infected(self, request):
+        return Response(Report.infected())
 
-class TradeViewSet(viewsets.ModelViewSet):
+    @action(methods=['get'], detail=False)
+    def non_infected(self, request):
+        return Response(Report.non_infected())
+    
+    @action(methods=['get'], detail=False)
+    def resource(self, request):
+        return Response(Report.resource())
 
-	serializer_class = TradeSerializer
-
-	def create(self, request):
-		ts = TradeSerializer(data=request.data)
-		sender = get_object_or_404(Survivor,id=ts.initial_data['sender_id'])
-		recipient = get_object_or_404(Survivor,id=ts.initial_data['recipient_id'])
-		if ts.is_valid():
-			if not sender.infected or not recipient.infected:
-				points_sender = (int(ts.data['sender_water']) * 4 + int(ts.data['sender_food']) * 3 +
-							 	 int(ts.data['sender_med']) * 2 + int(ts.data['sender_ammo']) * 1)
-				points_recipient = (int(ts.data['recipient_water']) * 4 + int(ts.data['recipient_food']) * 3 +
-							 		int(ts.data['recipient_med']) * 2 + int(ts.data['recipient_ammo']) * 1)		
-				if not sender.inventory.get_points() >= points_sender and not recipient.inventory.get_points() >= points_recipient:
-					if points_sender == points_recipient:
-						sender.inventory.water -= ts.data['sender_water']
-						sender.inventory.food -= ts.data['sender_food']
-						sender.inventory.med -= ts.data['sender_med']
-						sender.inventory.ammo -= ts.data['sender_ammo']
-
-						recipient.inventory.water -= ts.data['recipient_water']
-						recipient.inventory.food -= ts.data['recipient_food']
-						recipient.inventory.med -= ts.data['recipient_med']
-						recipient.inventory.ammo -= ts.data['recipient_ammo']
-
-						recipient.inventory.water += ts.data['sender_water']
-						recipient.inventory.food += ts.data['sender_food']
-						recipient.inventory.med += ts.data['sender_med']
-						recipient.inventory.ammo += ts.data['sender_ammo']
-
-						sender.inventory.water += ts.data['recipient_water']
-						sender.inventory.food += ts.data['recipient_food']
-						sender.inventory.med += ts.data['recipient_med']
-						sender.inventory.ammo += ts.data['recipient_ammo']
-
-						sender.inventory.save()
-						recipient.inventory.save()
-						return Response({'status':'Itens traded successfully!'}, 
-							status=status.HTTP_200_OK)
-					else:
-						return Response({'status':'Sorry couldnt make it, one of the traders doesnt have enough points to trade!'}, 
-							status=status.HTTP_406_NOT_ACCEPTABLE)
-				else:
-					return Response({'status':'One of the traders doesnt have enough points to trade!'}, 
-						status=status.HTTP_406_NOT_ACCEPTABLE)
-			else:
-				return Response({'status':'Trade failed due to one of the traders is infected!'}, 
-					status=status.HTTP_400_BAD_REQUEST)
-		else:
-			return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-	def get_queryset(self):
-		return None
-       		
-					
+    @action(methods=['get'], detail=False)
+    def lost_points(self, request):
+        return Response(Report.lost_points())
+                    
