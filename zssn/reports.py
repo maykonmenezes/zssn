@@ -2,38 +2,37 @@ from zssn.models import Survivor, Inventory, Location, Flag
 
 class Report():
 
-	infected_survivors = Survivor.object.filter(infected=True)
-	survivors = Survivor.object.all()
-	inventories = Inventory.object.all()
-
 	def infected():
-
+		survivors = Survivor.objects.all()
+		infected_survivors = Survivor.objects.filter(infected=True)
 		result = {
 					"title":"Percentage of Survivors Infected",
-					"result": (100.0 /float(len(self.survivors))) * float(len(self.survivors_infected))
+					"result": (100.0 /float(len(survivors))) * float(len(infected_survivors))
 				  }
 
 		return result
 
 
 	def non_infected():
-
+		survivors = Survivor.objects.all()
+		non_infected_survivors = Survivor.objects.filter(infected = False)
 		result = {
 					"title":"Percentage of Survivors Non Infected",
-					"result": (100.0 /float(len(self.survivors_infected))) * float(len(self.survivors))
+					"result": (100.0 /float(len(survivors))) * float(len(non_infected_survivors))
 				  }
 
 		return result
 
 
 	def resource():
-
+		inventories = Inventory.objects.all()
+		non_infected_survivors = Survivor.objects.filter(infected = False)
 		water = 0
 		food = 0
 		med = 0
 		ammo = 0
 
-		for i in self.inventories:
+		for i in inventories:
 			water += i.water
 			food += i.food
 			med += i.med
@@ -42,10 +41,10 @@ class Report():
 		result = {
 					"title":"Average Amount of Resources by Survivors",
 					"result": {
-						"water": float(water)/float(len(survivors)),
-						"food": float(food)/float(len(survivors)),
-						"med": float(med)/float(len(survivors)),
-						"ammo": float(ammo)/float(len(survivors)),
+						"water": float(water)/float(len(non_infected_survivors)),
+						"food": float(food)/float(len(non_infected_survivors)),
+						"med": float(med)/float(len(non_infected_survivors)),
+						"ammo": float(ammo)/float(len(non_infected_survivors)),
 					}
 
 				  }
@@ -53,14 +52,16 @@ class Report():
 		return result
 
 
-		def lost_points():
-			counter = 0
-			for survivor in infected_survivors:
-				counter += survivor.inventory.get_points()
+	def lost_points():
+		infected_survivors = Survivor.objects.filter(infected=True)
+		counter = 0
 
-			result = {
+		for survivor in infected_survivors:
+			counter += survivor.inventory.get_points()
+
+		result = {
 					"title":"Points Lost Because of Infected Survivors",
 					"result": counter
 				  }
 
-			return result
+		return result

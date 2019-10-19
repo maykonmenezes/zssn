@@ -22,21 +22,20 @@ class Survivor(models.Model):
 
 class Inventory(models.Model):
 
-	survivor = models.OneToOneField(Survivor, related_name="inventory", on_delete=models.CASCADE)
-	water = models.IntegerField(default=0)
-	food = models.IntegerField(default=0)
-	med = models.IntegerField(default=0)
-	ammo = models.IntegerField(default=0)
+    survivor = models.OneToOneField(Survivor, related_name="inventory", on_delete=models.CASCADE)
+    water = models.IntegerField(default=0)
+    food = models.IntegerField(default=0)
+    med = models.IntegerField(default=0)
+    ammo = models.IntegerField(default=0)
 
-	class Meta:
-		verbose_name = 'Inventory'
-		verbose_name_plural = 'Inventories'
+    class Meta:
+        verbose_name = 'Inventory'
+        verbose_name_plural = 'Inventories'
 
-	def __str__(self):
-		return self.survivor.name + " Inventory"
 
     def get_points(self):
-        return water*4 + food*3 + med*3 + ammo
+        return self.water * 4 + self.food * 3 + self.med * 2 + self.ammo
+
 
 
 class Location(models.Model):

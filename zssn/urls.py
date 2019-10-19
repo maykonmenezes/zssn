@@ -4,9 +4,11 @@ from zssn import views
 
 router = DefaultRouter()
 router.register(r'survivors', views.SurvivorViewSet)
-router.register(r'inventories', views.InventoryViewSet)
-router.register(r'locations', views.LocationViewSet)
-router.register(r'flags', views.FlagViewSet)
+router.register(r'inventories', views.InventoryViewSet, base_name = 'inventory')
+router.register(r'location', views.LastLocationViewSet, base_name = 'location')
+router.register(r'flag-infected', views.FlagViewSet, base_name = 'flag')
+router.register(r'reports',views.ReportViewSet, base_name = 'report')
+router.register(r'trades',views.TradeViewSet, base_name = 'trade')
 
 urlpatterns = [
     path('', include(router.urls)),
