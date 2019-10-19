@@ -1,5 +1,5 @@
 from zssn.models import Survivor, Inventory, Location, Flag
-from zssn.serializers import SurvivorSerializer, InventorySerializer, LastLocationSerializer, FlagSerializer, TradeSerializer
+from zssn.serializers import SurvivorSerializer, InventorySerializer, LastLocationSerializer, LocationSerializer, FlagSerializer, TradeSerializer
 from rest_framework import generics
 from django.contrib.auth.models import User
 from rest_framework import permissions
@@ -19,11 +19,32 @@ class SurvivorViewSet(viewsets.ModelViewSet):
     serializer_class = SurvivorSerializer
     
     def update(self, request):
+        """
+        Return a response 405 METHOD NOT ALLOWED for updating existing survivors
+        """
         return Response({'status':'Survivor changes not allowed!'}, 
             status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(methods=['post'], detail=True, serializer_class=LastLocationSerializer)
+    @action(methods=['get'], detail=True, serializer_class=InventorySerializer)    
+    def inventory(self, request, pk):
+        """
+        Retrive the data from a survivor's inventory
+        """
+        survivor = get_object_or_404(Survivor, id=pk)
+        data = InventorySerializer(survivor.inventory, many=False, context={'request': request}).data
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(methods=['post','get'], detail=True, serializer_class=LastLocationSerializer)
     def last_location(self, request, pk):
+        """
+        Update and return an existing last location from a survivor
+        """
+        if request.method == 'GET':
+            survivor = get_object_or_404(Survivor, id=pk)
+            data = LocationSerializer(survivor.location, many=False, context={'request': request}).data
+
+            return Response(data, status=status.HTTP_200_OK)
+
         ls = LastLocationSerializer(data=request.data)
         survivor = get_object_or_404(Survivor, id=pk)
         if ls.is_valid():
@@ -37,6 +58,9 @@ class SurvivorViewSet(viewsets.ModelViewSet):
 
     @action(methods=['post'], detail=True, serializer_class=FlagSerializer)
     def flag(self, request,pk):
+        """
+        Flag another survivor as infected throught his id
+        """
         fs = FlagSerializer(data=request.data)
         flagged = get_object_or_404(Survivor, id=fs.initial_data['flagged_id'])
         flagging = get_object_or_404(Survivor, id=pk)
@@ -56,6 +80,9 @@ class SurvivorViewSet(viewsets.ModelViewSet):
     
     @action(methods=['post'], detail=True, serializer_class=TradeSerializer)
     def trade(self, request, pk):
+        """
+        Trade itens with another survivor
+        """
         ts = TradeSerializer(data=request.data)
         dealer = get_object_or_404(Survivor,id=pk)
         buyer = get_object_or_404(Survivor,id=ts.initial_data['buyer_id'])
@@ -104,28 +131,36 @@ class SurvivorViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST)
   
 
-class InventoryViewSet(viewsets.ModelViewSet):
-   
-   queryset = Inventory.objects.all()
-   serializer_class = InventorySerializer
-   permission_classes = [SurvivorReadOnly]
-
-
 class ReportViewSet(viewsets.ViewSet):
 
     @action(methods=['get'], detail=False)
     def infected(self, request):
+        """
+        Report the percentage of survivors infected by the virus
+        """
         return Response(Report.infected())
 
     @action(methods=['get'], detail=False)
     def non_infected(self, request):
+        """
+        Report the percentage of survivors non infected
+        """
         return Response(Report.non_infected())
     
     @action(methods=['get'], detail=False)
     def resource(self, request):
+        """
+        Retrives the resource avegare available by survivor
+        """
         return Response(Report.resource())
 
     @action(methods=['get'], detail=False)
     def lost_points(self, request):
+        """
+        Report lost points by infected survivors
+        """
         return Response(Report.lost_points())
+
+    def list(self, request):
+        return Response(None)
                     

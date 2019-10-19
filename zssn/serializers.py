@@ -5,18 +5,19 @@ class InventorySerializer(serializers.HyperlinkedModelSerializer):
     
     class Meta:
         model = Inventory
-        fields = ['url', 'id', 'survivor', 'water',
+        fields = ['id', 'water',
                   'food', 'med', 'ammo', 'get_points']
         extra_kwargs = {
             'get_points': {'read_only' : True}, 
             'survivor': {'read_only' : True}
         }
 
+
 class LocationSerializer(serializers.HyperlinkedModelSerializer):
-    
+
     class Meta:
         model = Location
-        fields = ['url', 'id','survivor', 'latitude', 'longitude']
+        fields = ['id','latitude', 'longitude']
         extra_kwargs = {'survivor': {'read_only' : True}}
 
 class LastLocationSerializer(serializers.Serializer):
