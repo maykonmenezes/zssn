@@ -48,9 +48,11 @@ class SurvivorViewSet(viewsets.ModelViewSet):
         ls = LastLocationSerializer(data=request.data)
         survivor = get_object_or_404(Survivor, id=pk)
         if ls.is_valid():
-            survivor.location.latitude = ls.data['latitude']
-            survivor.location.longitude = ls.data['longitude']
-            survivor.save()
+            location = Location()
+            location.latitude = ls.data['latitude']
+            location.longitude = ls.data['longitude']
+            location.survivor_id = pk
+            location.save()
             return Response({'status':'Survivor last location updated successfully'}, 
                 status=status.HTTP_200_OK)
         else:
@@ -87,12 +89,12 @@ class SurvivorViewSet(viewsets.ModelViewSet):
         dealer = get_object_or_404(Survivor,id=pk)
         buyer = get_object_or_404(Survivor,id=ts.initial_data['buyer_id'])
         if ts.is_valid():
-            if not dealer.infected or not buyer.infected:
+            if not dealer.infected and not buyer.infected:
                 points_dealer = (int(ts.data['pick_water']) * 4 + int(ts.data['pick_food']) * 3 +
                                  int(ts.data['pick_med']) * 2 + int(ts.data['pick_ammo']) * 1)
                 points_buyer = (int(ts.data['offer_water']) * 4 + int(ts.data['offer_food']) * 3 +
                                     int(ts.data['offer_med']) * 2 + int(ts.data['offer_ammo']) * 1)     
-                if dealer.inventory.get_points() >= points_dealer or buyer.inventory.get_points() >= points_buyer:
+                if dealer.inventory.get_points() >= points_dealer and buyer.inventory.get_points() >= points_buyer:
                     if points_dealer == points_buyer:
                         dealer.inventory.water -= ts.data['pick_water']
                         dealer.inventory.food -= ts.data['pick_food']

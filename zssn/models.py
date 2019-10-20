@@ -31,8 +31,7 @@ class Inventory(models.Model):
     class Meta:
         verbose_name = 'Inventory'
         verbose_name_plural = 'Inventories'
-
-
+    
     def get_points(self):
         return self.water * 4 + self.food * 3 + self.med * 2 + self.ammo
 
