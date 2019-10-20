@@ -133,9 +133,9 @@ Run the server:
 
 **GET** `/reports/non_infected` the percentage of healthy survivors.
 
-**GET** `/reports/average_resource` the average amount of each kind of resource by survivor.
+**GET** `/reports/resource` the average amount of each kind of resource by survivor.
 
-**GET** `/reports/points_lost` the amount of points lost because of the infected.
+**GET** `/reports/lost_points` the amount of points lost because of the infected.
 
 
 
