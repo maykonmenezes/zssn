@@ -164,5 +164,5 @@ class ReportViewSet(viewsets.ViewSet):
         return Response(Report.lost_points())
 
     def list(self, request):
-        return Response(None)
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
                     
