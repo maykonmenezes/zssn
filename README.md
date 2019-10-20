@@ -141,7 +141,7 @@ Run the server:
 
 ## Running Tests
 
-Run the tests
+You can run some automated tests to check the functionalities by running the command below:
 
     python manage.py zssn.tests
     
