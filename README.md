@@ -63,7 +63,7 @@ Run the server:
     "name": "Survivor Name",
     "age": 20,
     "gender": "M",
-    "last_location": {
+    "location": {
           "latitude":24325.09,
           "longitude":-56456
           }
